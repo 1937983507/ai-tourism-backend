@@ -1,20 +1,20 @@
-# AI 智能旅游规划助手（后端）
+# AI 智能旅游规划助手（后端服务）
 
 > **访问地址**：[https://www.aitrip.chat/](https://www.aitrip.chat/)  
 > **欢迎体验智能旅游规划服务！**
 
 ## 📖 项目简介
 
-**AI-Tourism** 是一个智能旅游规划系统，后端基于 **Spring Boot、LangChain4j、MySQL、MyBatis、Sa-Token** 等技术栈构建。
+**AI-Tourism Backend** 是智能旅游规划系统的**后端 API 服务**，基于 **Spring Boot、MySQL、MyBatis、Sa-Token** 等技术栈构建。
 
-系统集成了多种 AI 能力（如 AI Service、MCP 工具等），为用户提供**个性化旅游路线推荐、多轮对话、权限控制**等功能。
+该服务作为前端与 Python Agent 服务之间的**应用服务层**，主要负责**API 网关、业务逻辑处理、数据持久化、流式响应处理**等核心功能。所有 AI Agent 相关的功能（如 LangGraph 工作流、工具调用、AI 对话处理等）已剥离到独立的 Python Agent 服务中。
 
 ### 🎯 核心特性
-- **多轮对话与上下文记忆** - 智能理解用户需求，保持对话连贯性
-- **地图路线可视化** - 实时展示旅游路线，直观易懂
-- **MCP 灵活热插拔** - 工具可动态启用/禁用，支持热插拔
-- **Tool 统一注册** - 所有工具统一管理，易于扩展
-- **安全认证与权限管理** - 完善的用户权限体系
+- **API 网关与请求路由** - 作为 API 网关，将前端请求路由到 Python Agent 服务，处理 SSE 流式响应
+- **会话与消息管理** - 提供完整的会话生命周期管理和消息持久化能力，支持历史记录查询
+- **用户认证与权限管理** - 基于 Sa-Token 的 JWT 认证体系，实现细粒度的权限控制
+- **业务数据接口** - 为 Agent 服务提供业务数据查询接口（如 POI 查询），支持数据服务化
+- **微服务架构** - 遵循微服务架构原则，职责清晰，与 Agent 服务完全解耦
 
 ---
 
@@ -24,43 +24,37 @@
 ### 📹 视频效果
 ![演示视频](./assets/demo.gif)
 
-**AI 智能旅游规划系统**，结合 `SpringBoot` 与 `LangChain4j`，在用户输入自然语言后，由 **AI Agent** 调用 **MCP 工具**与 **Function Call** 获取天气、景点等信息，由前端同时渲染文字版路线规划与结构化地图路线。
+**AI 智能旅游规划系统**采用前后端分离架构。用户在前端输入自然语言后，请求经过后端 API 服务转发到 **Python Agent 服务**，由 Agent 服务调用工具获取天气、景点等信息，生成旅游路线规划。后端 API 服务负责处理流式返回、会话管理和数据持久化。
 
 ---
 
 ## 💡 核心特性与架构特点
 
-![核心特性与架构特点](assets/核心特性与架构特点.png)
+### 1. 应用服务架构设计
+- **职责清晰**：专注于业务逻辑处理、API 网关、数据持久化，不涉及 AI 能力
+- **服务解耦**：与 Python Agent 服务完全解耦，通过 HTTP 接口通信，遵循微服务架构原则
+- **流式处理**：使用 `Reactor` 处理 SSE 流式响应，实时转发给前端，支持高并发场景
 
-### 1. Agent 服务与地图路线渲染深度结合
-- **图文结合**：提供图文结合的旅游攻略，并在前端地图中直观展示每日路线
-- **流式传输**：使用 `SSE` 流式传输文字版攻略，并基于 `JSON Schema` 输出结构化数据，支持前端实时渲染
+### 2. API 网关与流式响应
+- **请求代理**：通过 `AgentProxyService` 实现 API 网关功能，将前端请求路由到 Python Agent 服务
+- **SSE 流式处理**：接收 Agent 服务的 SSE 流式响应，通过响应式编程实时转发给前端
+- **容错机制**：完善的错误处理、超时控制和降级策略，保障服务高可用性
 
-### 2. 基于 Langchain4j 的 Agent 服务
-- **任务规划**：基于 `Prompt` 工程，设计角色定位 + 任务目标 + 约束限制
-- **工具调用**：`MCP` 工具通过配置可灵活启用/禁用，支持热插拔；所有 `Tool` 工具均实现统一接口，注册到 `ToolManager`，支持运行时动态扩展与管理
-- **多轮记忆**：实现 `ChatMemoryStore`，短期记忆优先存储于 `Redis`，未命中自动回退数据库，`AI Service` 实例以会话为单位缓存，支持多用户并发与上下文隔离
-- **结构化输出路线**：基于 `JSON Schema` 输出结构化路线数据，用于前端地图渲染展示
-- **安全防范**：`LangChain4j` 输入护轨机制，前置校验请求内容，防止敏感词与 `Prompt` 注入攻击，保障系统稳定性
+### 3. 会话与消息管理
+- **会话管理**：会话的创建、查询、删除、重命名等操作
+- **消息持久化**：用户消息和 AI 回复保存到数据库，支持历史记录查询
+- **标题生成**：使用 LLM 自动生成会话标题，提升用户体验
 
-### 3. 统一工具注册与高性能调用防抖
-- **MCP 工具**：通过配置可灵活启用/禁用，支持热插拔
-- **Function Call 工具**：通过 `ToolManager` 统一注册与调度，支持运行时扩展
-- **性能优化**：引入 `Caffeine` 缓存，避免重复调用外部服务，**平均响应耗时从 5.20s 下降至 399μs**
+### 4. 用户认证与权限管理
+- **Sa-Token 认证**：基于 `JWT` 的短期令牌 + `Refresh Token` 长期令牌机制
+- **权限控制**：注解式权限控制（`@SaCheckLogin`、`@SaCheckPermission`），细粒度角色管理
+- **用户管理**：用户注册、登录、权限分配等功能
 
-### 4. 多轮对话记忆与实例隔离
-- **记忆管理**：结合 `Redis` 与数据库实现短期记忆，使用数据库实现会话历史
-- **实例缓存**：基于 `Caffeine` 缓存 `AI Service` 实例，支持会话隔离，提升服务响应性能并减少实例重复创建
-- **性能提升**：实例平均创建时间由 **13.1ms 降低至 9.74ms，性能提升 28.4%**
+### 5. 工具接口提供
+- **POI 查询接口**：为 Python Agent 服务提供景点数据查询接口
+- **业务数据接口**：提供只读的业务数据接口，供 Agent 服务调用
 
-### 5. AI 输入护轨与结构化输出
-- **安全校验**：请求前置校验，自动过滤敏感词、恶意注入等风险内容，保障系统安全
-
-### 6. Sa-Token 权限认证
-- **令牌机制**：`JWT` 短期令牌 + `Refresh Token` 长期令牌结合
-- **权限控制**：注解式权限控制，细粒度角色管理
-
-### 7. SpringBoot 工程化与 RESTful 设计
+### 6. SpringBoot 工程化与 RESTful 设计
 - **分层架构**：标准的分层架构（`Controller` - `Service` - `Mapper`）
 - **接口规范**：接口统一，符合 `RESTful` 规范，易于前后端协作
 
@@ -68,29 +62,80 @@
 
 ## 🏗️ 系统整体架构
 
+```
+┌─────────────────┐
+│   前端 (Vue)     │
+│  ai-tourism-     │
+│  frontend        │
+└────────┬─────────┘
+         │ HTTP/SSE
+         │
+┌────────▼─────────────────────────────────────┐
+│   后端 API 服务 (Spring Boot)                 │
+│   ai-tourism-backend                          │
+│                                               │
+│  ┌─────────────────────────────────────┐   │
+│  │ Controller 层                         │   │
+│  │ - ChatController (对话接口)           │   │
+│  │ - AuthController (认证接口)            │   │
+│  │ - ToolController (工具接口)            │   │
+│  └──────────────┬────────────────────────┘   │
+│                 │                             │
+│  ┌──────────────▼────────────────────────┐   │
+│  │ Service 层                             │   │
+│  │ - AssistantChatService (会话管理)      │   │
+│  │ - AgentProxyService (请求转发)         │   │
+│  │ - AuthService (用户认证)               │   │
+│  │ - PoiToolService (POI查询)            │   │
+│  └──────────────┬────────────────────────┘   │
+│                 │                             │
+│  ┌──────────────▼────────────────────────┐   │
+│  │ Mapper 层 (MyBatis)                   │   │
+│  │ - SessionMapper                       │   │
+│  │ - ChatMessageMapper                   │   │
+│  │ - UserMapper                          │   │
+│  └──────────────┬────────────────────────┘   │
+└─────────────────┼─────────────────────────────┘
+                  │
+         ┌────────▼────────┐
+         │   MySQL 数据库   │
+         │ 会话、消息、用户 │
+         └─────────────────┘
+                  │
+         ┌────────▼────────┐
+         │ HTTP/SSE        │
+         │                 │
+┌────────▼─────────────────▼────────┐
+│   Python Agent 服务               │
+│   ai-tourism-agent                │
+│   - LangGraph 工作流              │
+│   - AI 对话处理                   │
+│   - 工具调用 (MCP/Function Call)  │
+│   - 结构化输出                    │
+└──────────────────────────────────┘
+```
 
+### 架构说明
 
 - **前端（ai-tourism-frontend）**：`Vue` 应用，负责交互、地图渲染与对话展示；通过 `SSE` 调用 `POST /ai_assistant/chat-stream` 实时消费模型输出
 
-- **接入层（Controller + 鉴权）**：基于 `Spring Boot REST`，使用 `Sa-Token` 进行登录与权限校验（如 `@SaCheckLogin`、`@SaCheckPermission`）
+- **后端 API 服务（ai-tourism-backend）**：
+  - **接入层（Controller + 鉴权）**：基于 `Spring Boot REST`，使用 `Sa-Token` 进行登录与权限校验，提供 RESTful API 接口
+  - **业务服务层**：
+    - `AssistantChatService`：统一处理会话管理、消息入库、流式返回转发
+    - `AgentProxyService`：实现 API 网关功能，将请求路由到 Python Agent 服务，处理 SSE 流式响应
+    - `AuthService`：用户认证与权限管理
+    - `PoiToolService`：为 Agent 服务提供 POI 查询接口
+  - **数据访问层（MyBatis）**：通过 `MyBatis` 实现数据持久化，管理会话表、消息表、用户表等
 
-- **服务层（MemoryChatServiceImpl）**：统一处理请求校验、获取会话历史、获取会话列表、消息入库、`SSE` 流式返回
+- **Python Agent 服务（ai-tourism-agent）**：
+  - **AI 对话处理**：LangGraph 工作流编排
+  - **工具调用管理**：Function Call + MCP 工具
+  - **状态管理**：使用 LangGraph Checkpoint 机制
+  - **流式响应**：SSE 流式返回
+  - **结构化输出**：JSON Schema 输出
 
-- **AI Service（MemoryAssistantServiceFactory）**：按会话构建隔离的 `AssistantService` 实例，整合 `OpenAI` 流式模型、`MessageWindowChatMemory`（基于 `ChatMemoryStore`）、输入护轨、工具调用；同时使用 `Caffeine` 按 `sessionId` 缓存实例，避免重复创建
 
-- **记忆与历史（Redis + MySQL）**：
-  - **短期对话记忆**：`CustomRedisChatMemoryStore` 基于 `Redis` 进行管理，同时支持 `MySQL` 消息填入
-  - **长期历史与结构化数据**：通过 `MyBatis` 写入 `MySQL`（会话表、消息表、路线 JSON）
-
-- **工具调用（Function Call + MCP）**：
-  - **Function Call**：`ToolManager` 统一注册所有 `BaseTool`
-  - **MCP**：基于 `LangChain4j MCP`，`McpClientService` 通过 `SSE` 创建 `ToolProvider`
-
-- **缓存与防抖**：
-  - **Caffeine**：缓存 `AssistantService` 实例
-  - **Redis**：承载对话记忆，降低数据库读写压力
-
-- **可观测性与监控**：`Micrometer` 暴露 `Prometheus` 指标（管理端点已开放 `prometheus`）；`AiModelMonitorListener`/`AiModelMetricsCollector` 记录请求量、耗时、Token 使用、错误率、缓存命中等；Grafana 仪表盘见 `doc/Prometheus-Grafana.json`
 
 ---
 
@@ -99,23 +144,28 @@
 ### 📂 目录结构
 
 ```
-ai-tourism/
+ai-tourism-backend/
 ├── src/
 │   ├── main/
 │   │   ├── java/com/example/aitourism/
-│   │   │   ├── ai/                  # AI Agent、工具、记忆、护轨等核心AI能力
-│   │   │   ├── config/              # 配置类（如Sa-Token、CORS、Redis等）
+│   │   │   ├── config/              # 配置类（如Sa-Token、CORS等）
 │   │   │   ├── controller/          # REST API 控制器
+│   │   │   │   ├── ChatController.java      # 对话接口
+│   │   │   │   ├── AuthController.java      # 认证接口
+│   │   │   │   └── ToolController.java      # 工具接口
 │   │   │   ├── dto/                 # 数据传输对象
 │   │   │   ├── entity/              # 实体类
 │   │   │   ├── exception/           # 全局异常处理
 │   │   │   ├── mapper/              # MyBatis 映射
-│   │   │   ├── monitor/             # 监控与埋点
-│   │   │   ├── service/             # 业务逻辑与AI集成
+│   │   │   ├── service/             # 业务逻辑层
+│   │   │   │   ├── AgentProxyService.java   # Agent 代理服务（请求转发）
+│   │   │   │   ├── AssistantChatService.java # 会话管理服务
+│   │   │   │   ├── AuthService.java         # 用户认证服务
+│   │   │   │   └── PoiToolService.java      # POI 查询服务
 │   │   │   └── util/                # 工具类
 │   │   └── resources/
 │   │       ├── application.yml      # 主要配置文件
-│   │       └── prompt/              # AI Prompt 模板
+│   │       └── mapper/              # MyBatis XML 映射文件
 ├── sql/
 │   └── create_table.sql             # 数据库表结构
 ├── doc/
@@ -131,16 +181,14 @@ ai-tourism/
 |---------|--------|----------|
 | **核心框架** | Java | `21` |
 | | Spring Boot | `3.5.6` |
-| **AI 能力** | LangChain4j | AI能力集成 |
 | **数据库** | MySQL | `9.4` |
 | **ORM** | MyBatis & MyBatis-Spring-Boot | 数据持久化 |
 | **安全认证** | Sa-Token | JWT 认证与权限 |
 | | BCrypt | 密码加密 |
+| **响应式编程** | Spring WebFlux | 流式响应处理 |
+| | Reactor | 响应式流处理 |
 | **工具库** | Lombok | 代码简化 |
-| | OkHttp3 | HTTP 客户端 |
 | | Hutool | 工具库 |
-| **缓存** | Caffeine | 本地高性能缓存 |
-| | Redis | 分布式缓存与对话记忆 |
 | **监控** | Prometheus + Grafana | 监控与可视化 |
 | | Micrometer | Spring Boot 监控埋点 |
 
@@ -170,7 +218,8 @@ ai-tourism/
 
 - **基础配置**：端口、数据库连接、日志、MyBatis 等
 - **安全认证**：Sa-Token JWT 密钥、token 过期时间、权限注解等  
-- **AI 服务**：OpenAI/MCP 等 AI 服务参数
+- **Agent 服务配置**：Python Agent 服务地址、内部 Token 等
+- **OpenAI 配置**：用于生成会话标题的 LLM 配置
 
 ### 🔗 接口说明
 
@@ -190,58 +239,24 @@ ai-tourism/
 
 | 接口 | 方法 | 说明 |
 |------|------|------|
-| `/ai_assistant/chat` | `POST` | 发起 AI 流式对话，返回旅游路线建议 |
+| `/ai_assistant/chat-stream` | `POST` | 发起 AI 流式对话，转发到 Python Agent 服务并返回 SSE 流式响应 |
 | `/ai_assistant/get_history` | `POST` | 获取会话历史，支持多轮追溯 |
 | `/ai_assistant/session_list` | `POST` | 获取历史会话列表，分页展示 |
+| `/ai_assistant/delete_session` | `POST` | 删除会话 |
+| `/ai_assistant/rename_session` | `POST` | 重命名会话 |
+| `/ai_assistant/callback` | `POST` | Agent 服务回调接口，用于保存结构化输出数据 |
+
+#### 工具接口（供 Agent 服务调用）
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/tool/poi` | `GET` | 查询景点 POI 数据（供 Agent 服务调用） |
 
 > 详细参数与返回格式请参考 [doc/API.md](doc/API.md)
 
 ---
 
 
-## 📊 监控与可观测性（Prometheus + Grafana）
-
-系统已集成 **Prometheus + Grafana** 实现全链路监控，覆盖 AI 服务调用、工具缓存命中、Token 消耗、响应耗时、错误率等核心指标。
-
-### 1. 数据采集
-- **指标采集**：使用 `Micrometer` 指标采集门面库，它集成在 `Spring Boot Actuator` 中。`Micrometer` 提供了一套统一的 API 来定义和记录指标，并且能够将这些指标转换为多种监控系统所需的格式，其中就包括 `Prometheus`
-- **指标定义**：创建了一个 `AiModelMetricsCollector` 类，在其中使用 `Micrometer API` 定义核心业务指标，主要包括：
-  - **Counter**：用于统计累计值，如 AI 请求总数、Token 消耗总量、错误总数
-  - **Timer**：用于记录耗时分布，如 AI 响应时长
-- **监听机制**：实现 `ChatModelListener` 接口，重写 `onRequest`、`onResponse`、`onError` 等方法，用于监听对应的关键事件，然后在其中调用 `AiModelMetricsCollector` 来实时记录定义的指标
-- **端点暴露**：`Spring Boot Actuator` 会自动创建一个 `/actuator/prometheus` 端点，将 `Micrometer` 采集的所有指标以 `Prometheus` 要求的文本格式暴露出来
-
-### 2. 数据存储
-- **Prometheus 配置**：需要部署独立的 `Prometheus` 服务，在其配置文件中添加抓取任务，让其定期抓取后端应用暴露的 `/actuator/prometheus` 端点的数据
-- **配置示例**：
-  ```yaml
-  - job_name: "ai-tourism"
-    metrics_path: '/actuator/prometheus'
-    scrape_interval: 10s
-    static_configs:
-      - targets: ["localhost:8290"]
-        labels:
-          group: "prod"
-          endpoint: "actuator"
-  ```
-- **数据存储**：`Prometheus` 会将这些时序数据高效地存储在它内置的 `TSDB` 时序数据库中
-
-### 3. 数据展示
-- **Grafana 连接**：在 `Grafana` 中连接 `Prometheus` 服务数据
-- **仪表盘创建**：创建了一个自定义的监控仪表盘，通过编写 `PromQL` 查询语句，将存储在 `Prometheus` 中的原始指标数据聚合成有意义的可视化图表
-
-### 4. 监控内容
-- **AI 模型指标**：总请求数、成功率、平均响应时间、Token 消耗趋势
-- **性能对比**：AI Service 实例创建时间对比（缓存/非缓存）
-- **缓存效果**：工具缓存命中率、调用响应时间对比（缓存/非缓存）
-- **用户活跃**：用户/会话活跃排行、错误类型分布等
-
-### 5. Grafana 大盘截图
-![仪表盘](./assets/仪表盘.png)
-
-> **具体 Grafana 配置**可参考 配置文件 [doc/Prometheus-Grafana.json](doc/Prometheus-Grafana.json)
-
----
 
 ## 🛫 部署与运行
 
@@ -249,7 +264,7 @@ ai-tourism/
 1. **JDK 21** - Java 运行环境
 2. **Maven** - 项目构建工具
 3. **MySQL 9.4** - 数据库
-4. **Redis 3.0** - 缓存服务
+4. **Python Agent 服务** - 需要启动独立的 Python Agent 服务（参考 [ai-tourism-agent 仓库](https://github.com/19337983507/ai-tourism-agent)）
 
 ### 🚀 部署步骤
 
@@ -257,7 +272,6 @@ ai-tourism/
 ```bash
 # 安装 JDK 21
 # 安装 MySQL 9.4
-# 安装 Redis 3.0
 ```
 
 #### 2️. 数据库初始化
@@ -266,13 +280,17 @@ ai-tourism/
 mysql -u root -p < sql/create_table.sql
 ```
 
-#### 3️. 配置文件
+#### 3️. 启动 Python Agent 服务
+确保 Python Agent 服务已启动并运行在配置的端口（默认 `8291`）
+
+#### 4️. 配置文件
 编辑 `src/main/resources/application.yml`：
 - 配置数据库连接信息
-- 配置 AI API Key
+- 配置 Python Agent 服务地址（`agent.base-url`）
+- 配置 OpenAI API Key（用于生成会话标题）
 - 配置其他必要参数
 
-#### 4️. 构建运行
+#### 5️. 构建运行
 ```bash
 # 构建项目
 mvn clean package
@@ -281,7 +299,7 @@ mvn clean package
 java -jar target/ai-tourism-0.0.1-SNAPSHOT.jar
 ```
 
-#### 5️. 前端部署
+#### 6️. 前端部署
 前端请参考 [ai-tourism-frontend 仓库](https://github.com/1937983507/ai-tourism-frontend)
 
 ---
@@ -307,50 +325,33 @@ java -jar target/ai-tourism-0.0.1-SNAPSHOT.jar
 
 ## 📋 TODO list
 
-### 1. AI Service 模块
-- [ ] 有时 AI 规划的路线可能会绕路，所以需要对其进行优化，例如加一个地理编码的 MCP 服务。
-- [ ] 可以提供更多的 MCP 服务，例如图片检索之类。
-- [ ] 将调用的工具也一起在前端渲染显示。
-- [ ] 可采用 **对话式引导规划**，先通过多轮问答确认用户的偏好、人数、预算、节奏，后端引入 Prompt 模板化与复用机制（多种旅行风格模板），AI根据意图自动切换。
-- [ ] 引入 **RAG**，对于某一城市的景点内容，可以存储在向量数据库中，若是能检索到则直接交给大模型输出；若是检索不到则调用MCP服务进行检索。（此时需要从马蜂窝、小红书、携程等平台爬取到足够量的景点介绍+用户游记）
-- [ ] 引入 **LangGraph4j**，解决直接调用 AI Service 时存在的流程不可控、任务耦合度高、扩展性较差的问题。
-  - **流程不可控**：所有的过程都被封装到单一的AI服务中，很难干预其中间过程。（例如我希望它先进行天气查询、然后进行景点查询、然后搜寻景点的照片，这样一个流程，难以控制与干预）。
-  - **任务耦合**：将逻辑上独立的步骤，都耦合在一个巨大的系统提示词里面，不仅使得提示词难以维护与异常复杂、同时增加了AI理解和执行任务的难度。
-  - **扩展性差**：若是想在流程中添加新的步骤，则在目前的模式下只能通过修改系统提示词进行解决。
-- [ ] 通过 **Redisson** 实现分布式限流，防止恶意请求和资源滥用。
-- [ ] **Redis** 部分的扩展补充，基于旁路缓存策略对数据一致性进行修复。
-- [ ] 针对用户留存，通过记忆构建用户个性化档案（如旅游偏好）。
-- [ ] 基于 A2A 协议实现多个 Agent 之间的协同工作，例如可以拆分为：
-  - 意图理解 Agent：解析用户的偏好、预算、天数
-  - 景点召回 Agent：从 RAG 或 MCP 中检索候选景点。
-  - 路径规划 Agent：基于地理编码结果获取景点坐标，并优化串联景点顺序。
-  - 天气交通 Agent：检测可达性与天气风险。
-  - 整合 Agent：综合输出行程表。
+### 1. 后端 API 服务优化
+- [ ] 优化流式响应处理，提升 API 网关转发性能
+- [ ] 实现请求重试机制和熔断器模式，提升服务稳定性
+- [ ] 集成限流组件（如 Sentinel），防止恶意请求和资源滥用
+- [ ] 增加 Agent 服务健康检查，实现自动降级和故障转移
 
 
-### 2. 对话模块（不是记忆模块）
-- [ ] 左侧历史会话列表支持置顶、取消置顶。
-- [ ] 对话过程中，可以直接终止本次对话。
-- [ ] 可以对以往发起的对话内容编辑，然后重新对话。
-- [ ] 对话框集成示例 prompt，用户可以直接选择，并修改填充后即可发起请求。
+### 2. 对话模块
+- [ ] 左侧历史会话列表支持置顶、取消置顶
+- [ ] 对话过程中，可以直接终止本次对话
+- [ ] 可以对以往发起的对话内容编辑，然后重新对话
+- [ ] 对话框集成示例 prompt，用户可以直接选择，并修改填充后即可发起请求
 
 ### 3. 用户模块
-- [ ] 完善管理员的权限，例如禁用某一用户、用户授权等等。
-- [ ] 注册时对手机号与密码等级进行校验。
+- [ ] 完善管理员的权限，例如禁用某一用户、用户授权等等
+- [ ] 注册时对手机号与密码等级进行校验
 
 ### 4. 其他模块
-- [ ] 将路线规划结果导出为 h5 页面，然后可以手机扫码展示、调起手机导航。
-- [ ] 支持跳转至各景点订单服务。
-- [ ] 地图上单击某个地点后，展示其详细信息（含图片与文字说明）。
-- [ ] 目前OSM地图在地点定位时，有些地点的定位会出现较大的误差，目前还没有很好的解决方法（因为服务器还在香港，所以就先用OSM地图）。
-- [ ] 加一个是否自动渲染地图的选项。
-- [ ] 加一个帮助页面。
+- [ ] 将路线规划结果导出为 h5 页面，然后可以手机扫码展示、调起手机导航
+- [ ] 支持跳转至各景点订单服务
+- [ ] 地图上单击某个地点后，展示其详细信息（含图片与文字说明）
+- [ ] 加一个帮助页面
 
 
 ---
 
-## 📚 核心基础代码
+## 📚 相关项目
 
-含有 **AI Service、MCP、Function Call** 调用基础核心代码
-
-> 可参考 [doc/coreBasicCode.md](doc/coreBasicCode.md) 文件 
+- **前端项目**：[ai-tourism-frontend](https://github.com/1937983507/ai-tourism-frontend)
+- **Python Agent 服务**：[ai-tourism-agent](https://github.com/1937983507/ai-tourism-agent) - 包含所有 AI Agent 相关功能（LangGraph 工作流、工具调用、AI 对话处理等） 
