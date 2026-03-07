@@ -301,14 +301,69 @@ mysql -u root -p < sql/create_table.sql
    - **安全认证**：配置 Sa-Token JWT 密钥（`sa-token.jwt-secret-key`），建议修改为强密钥
    - **其他配置**：根据实际需求调整端口、日志级别等配置
 
-#### 5️. 构建运行
-```bash
-# 构建项目
-mvn clean package
+#### 5️. 构建与部署运行
 
-# 运行项目
+```bash
+# 构建项目（打包生成 jar 包）
+mvn clean package -DskipTests
+
+# 本地直接运行（开发/测试）
 java -jar target/ai-tourism-0.0.1-SNAPSHOT.jar
 ```
+
+在生产环境中，推荐使用 `systemd` 将后端以服务方式常驻运行（以 Linux 服务器为例，需 `root` 或具有相应权限的用户）：
+
+1. **将 Jar 部署到服务器**
+
+   假设将构建出的 Jar 放在：`/www/wwwroot/ai/ai-tourism-0.0.1-SNAPSHOT.jar`
+
+2. **创建 systemd 服务文件**
+
+   ```bash
+   sudo vim /etc/systemd/system/ai-tourism.service
+   ```
+
+   写入如下内容（可根据实际路径和用户调整）：
+
+   ```ini
+   [Unit]
+   Description=AI Tourism Backend Service
+   After=network.target
+
+   [Service]
+   Type=simple
+   # 根据实际情况选择运行用户，并确保该账号有权限访问 Jar 和日志目录
+   User=root
+   WorkingDirectory=/www/wwwroot/ai
+   ExecStart=/usr/bin/java -jar /www/wwwroot/ai/ai-tourism-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
+   Restart=always
+   RestartSec=10
+   SuccessExitStatus=143
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+3. **加载并启用服务**
+
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable ai-tourism
+   sudo systemctl start ai-tourism
+
+   # 查看运行状态
+   sudo systemctl status ai-tourism
+
+   # 查看实时日志
+   sudo journalctl -u ai-tourism -f
+   ```
+
+   如需停止或重启服务：
+
+   ```bash
+   sudo systemctl stop ai-tourism
+   sudo systemctl restart ai-tourism
+   ```
 
 #### 6️. 前端部署
 前端请参考 [ai-tourism-frontend 仓库](https://github.com/1937983507/ai-tourism-frontend)
