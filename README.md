@@ -214,12 +214,16 @@ ai-tourism-backend/
 
 ### ⚙️ 配置说明
 
+> **重要提示**：项目提供了 `application-example.yml` 作为配置模板。首次部署时，请先将其复制为 `application.yml`，然后根据实际环境修改配置项。
+
 主要配置项在 `src/main/resources/application.yml`：
 
 - **基础配置**：端口、数据库连接、日志、MyBatis 等
 - **安全认证**：Sa-Token JWT 密钥、token 过期时间、权限注解等  
 - **Agent 服务配置**：Python Agent 服务地址、内部 Token 等
 - **OpenAI 配置**：用于生成会话标题的 LLM 配置
+
+配置文件示例请参考 `src/main/resources/application-example.yml`。
 
 ### 🔗 接口说明
 
@@ -284,11 +288,18 @@ mysql -u root -p < sql/create_table.sql
 确保 Python Agent 服务已启动并运行在配置的端口（默认 `8291`）
 
 #### 4️. 配置文件
-编辑 `src/main/resources/application.yml`：
-- 配置数据库连接信息
-- 配置 Python Agent 服务地址（`agent.base-url`）
-- 配置 OpenAI API Key（用于生成会话标题）
-- 配置其他必要参数
+1. **复制配置文件**：
+   ```bash
+   # 将示例配置文件复制为实际配置文件
+   cp src/main/resources/application-example.yml src/main/resources/application.yml
+   ```
+
+2. **编辑配置文件** `src/main/resources/application.yml`，修改以下配置项：
+   - **数据库连接**：配置 MySQL 数据库连接信息（`spring.datasource.url`、`username`、`password`）
+   - **Agent 服务地址**：配置 Python Agent 服务地址（`agent.base-url`，默认 `http://localhost:8291`）
+   - **OpenAI 配置**：配置 OpenAI API Key 和模型信息（`openai.api-key`、`openai.base-url`、`openai.model-name`），用于生成会话标题
+   - **安全认证**：配置 Sa-Token JWT 密钥（`sa-token.jwt-secret-key`），建议修改为强密钥
+   - **其他配置**：根据实际需求调整端口、日志级别等配置
 
 #### 5️. 构建运行
 ```bash
