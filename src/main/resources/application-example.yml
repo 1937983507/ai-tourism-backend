@@ -61,7 +61,7 @@ logging:
   logback:
     rollingpolicy:
       max-file-size: 10MB
-      max-history: 30
+      max-history: 7
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%highlight(%-5level)] [%thread] [%X{traceId}] %-5level %logger{36}:%line - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%highlight(%-5level)] [%thread] [%X{traceId}] %-5level %logger{36}:%line - %msg%n"
