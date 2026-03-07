@@ -5,7 +5,7 @@ server:
 # 连接数据库
 spring:
   datasource:
-    url: jdbc:mysql://your-host:3306/your_db?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    url: jdbc:mysql://127.0.0.1:3306/aitourism?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8
     username: your_username
     password: your_password
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -19,10 +19,6 @@ spring:
       pool:
         size: 1
 
-# 天气 API 配置
-openweather:
-  api-key: "your_api_key"
-
 # Python Agent 服务配置
 agent:
   # Python Agent 基础地址（FastAPI 服务，不包含/agent路径）
@@ -30,17 +26,10 @@ agent:
   # 可选：内部访问 Token，如未配置则不校验
   internal-token: ""
 
-# OpenAI配置（主模型）
+# OpenAI配置
 openai:
   api-key: "your_api_key"
-  base-url: "your_base_url"      # 国外节点
-  model-name: "your_model_name"
-  max-output-tokens: 800
-
-# OpenAI配置（小模型）
-openai-small:
-  api-key: "your_api_key"
-  base-url: "your_base_url"      # 本地 Ollama 模型
+  base-url: "your_base_url"
   model-name: "your_model_name"
   max-output-tokens: 800
 

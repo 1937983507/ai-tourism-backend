@@ -57,13 +57,13 @@ public class AssistantChatServiceImpl implements AssistantChatService {
         this.objectMapper = objectMapper;
     }
 
-    // 小模型（用于生成会话标题）
-    @Value("${openai-small.api-key}")
-    private String apiKeySmall;
-    @Value("${openai-small.base-url}")
-    private String baseUrlSmall;
-    @Value("${openai-small.model-name}")
-    private String modelNameSmall;
+    // LLM相关配置（用于生成会话标题）
+    @Value("${openai.api-key}")
+    private String apiKey;
+    @Value("${openai.base-url}")
+    private String baseUrl;
+    @Value("${openai.model-name}")
+    private String modelName;
 
     // 对话请求（Reactor 流式）- 转发到 Python Agent 服务
     @Override
@@ -289,13 +289,13 @@ public class AssistantChatServiceImpl implements AssistantChatService {
         return "对话服务暂时出现波动，请稍后再试";
     }
 
-    // 异步生成标题（使用小模型）
+    // 异步生成标题
     private CompletableFuture<String> getTitleAsync(String message) {
         return CompletableFuture.supplyAsync(() -> {
             OpenAiChatModel model = OpenAiChatModel.builder()
-                    .apiKey(apiKeySmall)
-                    .baseUrl(baseUrlSmall)
-                    .modelName(modelNameSmall)
+                    .apiKey(apiKey)
+                    .baseUrl(baseUrl)
+                    .modelName(modelName)
                     .build();
             String template = """
                     请根据用户以下的问题生成一个会话标题，注意需要严格限制字数在10个中文字以内！
