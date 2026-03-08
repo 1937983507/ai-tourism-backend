@@ -315,12 +315,12 @@ java -jar target/ai-tourism-0.0.1-SNAPSHOT.jar
 
 1. **将 Jar 部署到服务器**
 
-   假设将构建出的 Jar 放在：`/www/wwwroot/ai/ai-tourism-0.0.1-SNAPSHOT.jar`
+   假设将构建出的 Jar 放在：`/www/wwwroot/ai/ai-tourism-backend/ai-tourism-0.0.1-SNAPSHOT.jar`
 
 2. **创建 systemd 服务文件**
 
    ```bash
-   sudo vim /etc/systemd/system/ai-tourism.service
+   sudo vim /etc/systemd/system/ai-tourism-backend.service
    ```
 
    写入如下内容（可根据实际路径和用户调整）：
@@ -334,7 +334,7 @@ java -jar target/ai-tourism-0.0.1-SNAPSHOT.jar
    Type=simple
    # 根据实际情况选择运行用户，并确保该账号有权限访问 Jar 和日志目录
    User=root
-   WorkingDirectory=/www/wwwroot/ai
+   WorkingDirectory=/www/wwwroot/ai/ai-tourism-backend
    ExecStart=/usr/bin/java -jar /www/wwwroot/ai/ai-tourism-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
    Restart=always
    RestartSec=10
@@ -348,21 +348,21 @@ java -jar target/ai-tourism-0.0.1-SNAPSHOT.jar
 
    ```bash
    sudo systemctl daemon-reload
-   sudo systemctl enable ai-tourism
-   sudo systemctl start ai-tourism
+   sudo systemctl enable ai-tourism-backend
+   sudo systemctl start ai-tourism-backend
 
    # 查看运行状态
-   sudo systemctl status ai-tourism
+   sudo systemctl status ai-tourism-backend
 
    # 查看实时日志
-   sudo journalctl -u ai-tourism -f
+   sudo journalctl -u ai-tourism-backend -f
    ```
 
    如需停止或重启服务：
 
    ```bash
-   sudo systemctl stop ai-tourism
-   sudo systemctl restart ai-tourism
+   sudo systemctl stop ai-tourism-backend
+   sudo systemctl restart ai-tourism-backend
    ```
 
 #### 6️. 前端部署
