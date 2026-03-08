@@ -284,10 +284,49 @@ ai-tourism-backend/
 mysql -u root -p < sql/create_table.sql
 ```
 
-#### 3️. 启动 Python Agent 服务
+#### 3️. POI 数据导入（可选）
+项目提供了批量导入景点 POI 数据的脚本，用于为 Agent 服务提供景点查询数据。
+
+**前置要求**：
+- Python 3.x
+- 安装依赖：`pip install pandas pymysql sqlalchemy tqdm`
+
+**导入步骤**：
+```bash
+# 进入 script 目录
+cd script
+
+# 修改 insertData.py 中的数据库配置
+# 编辑 DB_CONFIG 部分，配置数据库连接信息：
+# - host: 数据库地址（默认 localhost）
+# - port: 数据库端口（默认 3306）
+# - user: 数据库用户名（默认 root）
+# - password: 数据库密码
+# - database: 数据库名（默认 aitourism）
+
+# 执行导入脚本
+python insertData.py
+```
+
+**脚本特性**：
+- ✅ 自动创建 `t_poi` 表（如果不存在）
+- ✅ 支持断点续传（中断后可继续导入）
+- ✅ 批量提交（每 500 条提交一次，提升性能）
+- ✅ 错误日志记录（失败的行会记录到 `failed_rows.log`）
+- ✅ 进度条显示（实时查看导入进度）
+
+**数据文件**：
+- `poi.csv`：包含全国景点数据，字段包括景点名称、城市、经纬度、排名、描述、图片链接等
+
+**注意事项**：
+- 如果数据库中已有 POI 数据，可跳过此步骤
+- 导入过程中如果中断，再次运行脚本会从断点继续（通过 `import_state.json` 记录进度）
+- 导入完成后，可删除 `import_state.json` 和 `failed_rows.log` 文件
+
+#### 4️. 启动 Python Agent 服务
 确保 Python Agent 服务已启动并运行在配置的端口（默认 `8291`）
 
-#### 4️. 配置文件
+#### 5️. 配置文件
 1. **复制配置文件**：
    ```bash
    # 将示例配置文件复制为实际配置文件
@@ -301,7 +340,7 @@ mysql -u root -p < sql/create_table.sql
    - **安全认证**：配置 Sa-Token JWT 密钥（`sa-token.jwt-secret-key`），建议修改为强密钥
    - **其他配置**：根据实际需求调整端口、日志级别等配置
 
-#### 5️. 构建与部署运行
+#### 6️. 构建与部署运行
 
 ```bash
 # 构建项目（打包生成 jar 包）
@@ -365,7 +404,7 @@ java -jar target/ai-tourism-0.0.1-SNAPSHOT.jar
    sudo systemctl restart ai-tourism-backend
    ```
 
-#### 6️. 前端部署
+#### 7️. 前端部署
 前端请参考 [ai-tourism-frontend 仓库](https://github.com/1937983507/ai-tourism-frontend)
 
 ---
