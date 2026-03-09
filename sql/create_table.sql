@@ -17,7 +17,7 @@ create table t_ai_assistant_sessions
     created_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     modify_time  datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     title        varchar(255)                       not null comment '标题',
-    daily_routes varchar(512)                       null,
+    daily_routes varchar(4096)                       null comment '路线规划',
     constraint session_id
         unique (session_id)
 )comment 'AI 助手会话表';
@@ -48,6 +48,7 @@ create table if not exists t_poi
     poi_description text not null comment '景点描述',
     poi_longitude float not null comment '景点经度',
     poi_latitude float not null comment '景点纬度',
+    poi_image_url varchar(512) not null comment '景点图片链接',
     poi_rankInCity int not null comment '景点在城市中的排名',
     poi_rankInChina int not null comment '景点在全国中的排名',
     created_time datetime default CURRENT_TIMESTAMP not null,

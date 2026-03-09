@@ -11,6 +11,7 @@ public class POI {
     private String poiDescription;
     private Float poiLongitude;
     private Float poiLatitude;
+    private String poiImageUrl;
     private Integer poiRankInCity;
     private Integer poiRankInChina;
     private LocalDateTime createdTime;
